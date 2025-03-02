@@ -7,9 +7,9 @@
 [submodule "lib/TOTP-MCU"]
 	path = lib/TOTP-MCU
 	url = https://github.com/Netthaw/TOTP-MCU
-[submodule "lib/CMSIS"]
-	path = lib/CMSIS
-	url = https://github.com/ARM-software/CMSIS_6
 [submodule "inc/STM32L4xx"]
 	path = inc/STM32L4xx
 	url = https://github.com/STMicroelectronics/cmsis-device-l4
+[submodule "lib/CMSIS"]
+	path = lib/CMSIS
+	url = https://github.com/ARM-software/CMSIS_5
