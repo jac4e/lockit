@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "type": "shell",
+            "command": "make",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Flash",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "flash"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "dependsOn": "Build"
+        }
+    ]
+}

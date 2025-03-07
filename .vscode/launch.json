@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/lockit.elf",
+            "gdbPath": "/usr/bin/gdb",
+            "device": "STM32L432KC",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32l4x.cfg"
+            ],
+            "svdFile": "${workspaceFolder}/lib/CMSIS/CMSIS/Device/ST/STM32L4xx/Include/stm32l432xx.svd",
+            "runToEntryPoint": "main",
+            "preLaunchTask": "Build"
+        }
+    ]
+}
