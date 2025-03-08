@@ -12,6 +12,7 @@
 
 static GPIO_InitTypeDef  GPIO_InitStruct;
 static void SystemClock_Config(void);
+static void LED_Task(void *pvParameters);
 
 int main(void)
 {
@@ -26,9 +27,14 @@ int main(void)
 
     HAL_GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStruct);
 
+    // Create LED task
+    xTaskCreate(LED_Task, "LED Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
+
+    vTaskStartScheduler();
+
+    // Technically should never reach here
     while (1)
     {
-        HAL_GPIO_TogglePin(LED3_GPIO_PORT, LED3_PIN);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
@@ -68,4 +74,13 @@ void SystemClock_Config(void)
     /* Initialization Error */
     while(1);
   }
+}
+
+void LED_Task(void *pvParameters)
+{
+    while (1)
+    {
+        HAL_GPIO_TogglePin(LED3_GPIO_PORT, LED3_PIN);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
