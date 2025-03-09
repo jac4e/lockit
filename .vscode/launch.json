@@ -7,7 +7,7 @@
             "request": "launch",
             "servertype": "openocd",
             "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/lockit.elf",
+            "executable": "${workspaceFolder}/build/${workspaceFolderBasename}.elf",
             "gdbPath": "/usr/bin/gdb",
             "device": "STM32L432KC",
             "configFiles": [
@@ -16,7 +16,13 @@
             ],
             "svdFile": "${workspaceFolder}/lib/CMSIS/CMSIS/Device/ST/STM32L4xx/Include/stm32l432xx.svd",
             "runToEntryPoint": "main",
-            "preLaunchTask": "Build"
+            "preLaunchTask": "Build Debug",
+            "postLaunchCommands": [
+                "monitor arm semihosting enable"
+            ],
+            "openOCDLaunchCommands": [
+                "transport select hla_swd",
+            ]
         }
     ]
 }

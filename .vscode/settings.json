@@ -1,16 +1,19 @@
 {
-    "cmake.generator": "Unix Makefiles",
-    "cmake.buildDirectory": "${workspaceFolder}/build",
-    "cmake.configureArgs": [
-        "-DCMAKE_BUILD_TYPE=Debug"
-    ],
+    "cmake.useCMakePresets": "always",
     "cmake.cmakePath": "/usr/bin/cmake",
     "cmake.configureOnOpen": true,
     "cmake.preferredGenerators": [
         "Ninja",
         "Unix Makefiles"
     ],
+
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+
     "files.associations": {
-        "stm32l4xx.h": "c"
-    }
+        "stm32l4xx.h": "c",
+        "task.h": "c",
+        "log.h": "c",
+        "cstdio": "cpp"
+    },
+    "cortex-debug.variableUseNaturalFormat": true
 }

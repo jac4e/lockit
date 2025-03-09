@@ -2,7 +2,39 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build",
+            "label": "Configure Debug",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "..",
+                "-DTARGET_GROUP=debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Configure Release",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "..",
+                "-DTARGET_GROUP=release"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "Build Release",
             "options": {
                 "cwd": "${workspaceFolder}/build"
             },
@@ -12,10 +44,24 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": ["$gcc"]
+            "problemMatcher": ["$gcc"],
+            "dependsOn": "Configure Release"
         },
         {
-            "label": "Flash",
+            "label": "Build Debug",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "type": "shell",
+            "command": "make",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "dependsOn": "Configure Debug"
+        },
+        {
+            "label": "Flash Release",
             "options": {
                 "cwd": "${workspaceFolder}/build"
             },
@@ -28,7 +74,38 @@
                 "kind": "build",
                 "isDefault": false
             },
-            "dependsOn": "Build"
+            "dependsOn": "Build Release"
+        },
+        {
+            "label": "Flash Debug",
+            "options": {
+                "cwd": "${workspaceFolder}/build/debug"
+            },
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "flash"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "dependsOn": "Build Debug"
+        },
+        {
+            "label": "Clean",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "clean"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
         }
     ]
 }

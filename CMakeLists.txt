@@ -59,6 +59,9 @@ set(OBJECT_GEN_FLAGS " \
 -ffunction-sections -fdata-sections \
 -fomit-frame-pointer \
 -mcpu=${MCU_SPEC} \
+-march=armv7e-m+fp \
+-mfloat-abi=hard \
+-mfpu=fpv4-sp-d16 \
 -mthumb \
 -mthumb-interwork \
 -mabi=aapcs \
@@ -79,11 +82,10 @@ configure_file(${LINKER_SCRIPT} ${LINKER_SCRIPT} COPYONLY)
 # Compiler Setup #
 ##################
 
-
 # Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g ${OBJECT_GEN_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g ${OBJECT_GEN_FLAGS}")
-set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -g ${OBJECT_GEN_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OBJECT_GEN_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OBJECT_GEN_FLAGS}")
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${OBJECT_GEN_FLAGS}")
 
 # Cross-compiler setup
 set(CMAKE_C_COMPILER arm-none-eabi-gcc)
@@ -96,84 +98,107 @@ set(CMAKE_SIZE arm-none-eabi-size)
 
 # Files to be compiled
 
-# if(TARGET_GROUP STREQUAL release)
-    # HAL Library
-    file(GLOB HAL_SRC ${HAL_DIR}/Src/*.c)
-    add_library(HAL STATIC ${HAL_SRC})
-    target_include_directories(
+# setup debug target so this stuff only runs with make debug
+if(TARGET_GROUP STREQUAL debug)
+    message(STATUS "[INFO] Debug build enabled")
+    set(SEMIHOSTING 1) # having issues with semihosting
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_LOGGING -DLOG_LEVEL=3 -DTRACE -g")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_LOGGING -DLOG_LEVEL=3 -DTRACE -g")
+    set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -DENABLE_LOGGING -DLOG_LEVEL=3 -DTRACE -g")
+elseif(TARGET_GROUP STREQUAL release)
+    message(STATUS "[INFO] Release build enabled")
+    set(SEMIHOSTING 0)
+else()
+    message(FATAL_ERROR "TARGET_GROUP must be set to either debug or release")
+endif()
+
+if(SEMIHOSTING)
+    string(APPEND CMAKE_EXE_LINKER_FLAGS "--specs=rdimon.specs -lc -lrdimon ")
+endif()
+
+# HAL Library
+file(GLOB HAL_SRC ${HAL_DIR}/Src/*.c)
+add_library(HAL STATIC ${HAL_SRC})
+target_include_directories(
+    HAL
+    PUBLIC
+        ${HAL_DIR}/Inc
+        ${MCU_DIR}/Include
+        ${CMSIS_DIR}/Core/Include
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/inc
+)
+target_compile_definitions(
+    HAL
+    PUBLIC
+    ${MCU}
+    HSE_VALUE=${HSE_VAL}
+)
+
+# RTOS Library
+file(GLOB RTOS_SRC ${RTOS_DIR}/*.c ${RTOS_PORT_DIR}/*.c ${RTOS_HEAP})
+add_library(RTOS STATIC ${RTOS_SRC})
+target_include_directories(
+    RTOS
+    PUBLIC
+        ${RTOS_DIR}/include
+        ${RTOS_PORT_DIR}
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/inc
+)
+
+# TOTP Library
+file(GLOB TOTP_SRC ${TOTP_DIR}/*.c)
+list(FILTER TOTP_SRC EXCLUDE REGEX "${TOTP_DIR}/blink.c")
+add_library(TOTP STATIC ${TOTP_SRC})
+target_include_directories(
+    TOTP
+    PUBLIC
+        ${TOTP_DIR}
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/inc
+)
+
+# Main
+file(GLOB_RECURSE MAIN_SRC src/*.c)
+set(SOURCES ${MAIN_SRC} ${STARTUP_FILE} ${SYSTEM_FILE})
+
+# Disable syscalls.c if semihosting is enabled
+if("${SEMIHOSTING}" STREQUAL "1")
+    list(FILTER SOURCES EXCLUDE REGEX "src/syscalls.c")
+endif()
+
+add_executable(${PROJECT_NAME}.elf ${SOURCES})    
+target_include_directories(
+    ${PROJECT_NAME}.elf
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/inc
+)
+target_link_libraries(
+    ${PROJECT_NAME}.elf
+    PUBLIC
         HAL
-        PUBLIC
-            ${HAL_DIR}/Inc
-            ${MCU_DIR}/Include
-            ${CMSIS_DIR}/Core/Include
-        PRIVATE
-            ${PROJECT_SOURCE_DIR}/inc
-    )
-    target_compile_definitions(
-        HAL
-        PUBLIC
+        RTOS
+        TOTP
+)
+target_compile_definitions(
+    ${PROJECT_NAME}.elf
+    PUBLIC
         ${MCU}
         HSE_VALUE=${HSE_VAL}
-    )
+        SEMIHOSTING=${SEMIHOSTING}
+)
 
-    # RTOS Library
-    file(GLOB RTOS_SRC ${RTOS_DIR}/*.c ${RTOS_PORT_DIR}/*.c ${RTOS_HEAP})
-    add_library(RTOS STATIC ${RTOS_SRC})
-    target_include_directories(
-        RTOS
-        PUBLIC
-            ${RTOS_DIR}/include
-            ${RTOS_PORT_DIR}
-        PRIVATE
-            ${PROJECT_SOURCE_DIR}/inc
-    )
+# Flash target
+add_custom_target(flash DEPENDS ${PROJECT_NAME}.elf)
+string(TOLOWER target/${MCU_FAMILY}.cfg FLASH_CONFIG_FILE_NAME)
+# need to make sure above string onle has one x before cfg
+string(REPLACE "xx" "x" FLASH_CONFIG_FILE_NAME ${FLASH_CONFIG_FILE_NAME})
+add_custom_command(
+    TARGET flash
+    COMMAND echo "Flashing ${PROJECT_NAME}.elf"
+    COMMAND openocd -f interface/stlink.cfg -f ${FLASH_CONFIG_FILE_NAME} -c "program ${PROJECT_NAME}.elf verify reset exit"
+)
 
-    # TOTP Library
-    file(GLOB TOTP_SRC ${TOTP_DIR}/*.c)
-    list(FILTER TOTP_SRC EXCLUDE REGEX "${TOTP_DIR}/blink.c")
-    add_library(TOTP STATIC ${TOTP_SRC})
-    target_include_directories(
-        TOTP
-        PUBLIC
-            ${TOTP_DIR}
-        PRIVATE
-            ${PROJECT_SOURCE_DIR}/inc
-    )
-
-    # Main
-    file(GLOB_RECURSE MAIN_SRC src/*.c)
-    set(SOURCES ${MAIN_SRC} ${STARTUP_FILE} ${SYSTEM_FILE})
-    add_executable(${PROJECT_NAME}.elf ${SOURCES})    
-    target_include_directories(
-        ${PROJECT_NAME}.elf
-        PUBLIC
-            ${PROJECT_SOURCE_DIR}/inc
-    )
-    target_link_libraries(
-        ${PROJECT_NAME}.elf
-        PUBLIC
-            HAL
-            RTOS
-            TOTP
-    )
-    target_compile_definitions(
-        ${PROJECT_NAME}.elf
-        PUBLIC
-            ${MCU}
-            HSE_VALUE=${HSE_VAL}
-            # SEMIHOSTING=${SEMIHOSTING}
-    )
-
-    # Flash target
-    add_custom_target(flash DEPENDS ${PROJECT_NAME}.elf)
-    string(TOLOWER target/${MCU_FAMILY}.cfg FLASH_CONFIG_FILE_NAME)
-    # need to make sure above string onle has one x before cfg
-    string(REPLACE "xx" "x" FLASH_CONFIG_FILE_NAME ${FLASH_CONFIG_FILE_NAME})
-    add_custom_command(
-        TARGET flash
-        COMMAND echo "Flashing ${PROJECT_NAME}.elf"
-        COMMAND openocd -f interface/stlink.cfg -f ${FLASH_CONFIG_FILE_NAME} -c "program ${PROJECT_NAME}.elf verify reset exit"
-    )
-# else()
-#     message(FATAL_ERROR "Invalid target group")
-# endif()
+# Clear cache
+unset(SEMIHOSTING)
