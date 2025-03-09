@@ -4,6 +4,7 @@
 #include "stm32l4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "log.h"
 
 #define LED3_PIN                           GPIO_PIN_3
 #define LED3_GPIO_PORT                     GPIOB
@@ -16,16 +17,22 @@ static void LED_Task(void *pvParameters);
 
 int main(void)
 {
+    #if (SEMIHOSTING==1)
+    initialise_monitor_handles();
+    #endif
+
     HAL_Init();
     SystemClock_Config();
-    LED3_GPIO_CLK_ENABLE();
 
+    INFO("System initialized");
+
+    LED3_GPIO_CLK_ENABLE();
     GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull  = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Pin = LED3_PIN;
-
     HAL_GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStruct);
+    INFO("LED initialized");
 
     // Create LED task
     xTaskCreate(LED_Task, "LED Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL);
@@ -80,6 +87,7 @@ void LED_Task(void *pvParameters)
 {
     while (1)
     {
+        INFO("LED Task");
         HAL_GPIO_TogglePin(LED3_GPIO_PORT, LED3_PIN);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

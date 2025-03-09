@@ -1,7 +1,8 @@
 #include "assert.h"
+#include "log.h"
 
-void assert(const char *file, int line)
+void __attribute__((optimize("-O3"))) assert(const char *file, int line)
 {
-    // Infinite loop
+    ERROR("Assertion failed at %s:%d", file, line);
     for(;;);
 }
