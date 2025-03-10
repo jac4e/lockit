@@ -1,0 +1,51 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "56eb11e6-6bfa-49b9-a5ec-ea124e3a654d")
+	(paper "A4")
+	(lib_symbols)
+	(sheet
+		(at 40.64 53.34)
+		(size 24.13 67.31)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "96444980-c471-4646-b943-1a63a2c940eb")
+		(property "Sheetname" "MCU"
+			(at 40.64 52.6284 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "mcu.kicad_sch"
+			(at 40.64 121.2346 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "lockit"
+				(path "/56eb11e6-6bfa-49b9-a5ec-ea124e3a654d"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)
